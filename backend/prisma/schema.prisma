@@ -1,0 +1,537 @@
+// Prisma Schema for Insight DevOps Platform
+// Database: SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============================================
+// 用户与权限相关表
+// ============================================
+
+// 用户表
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String
+  email        String    @unique
+  phone        String?
+  realName     String?
+  status       Int       @default(1) // 1:正常 0:禁用
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  isDeleted    Int       @default(0)
+
+  // 关联
+  ownedApps       App[]       @relation("AppOwner")
+  ownedScripts    Script[]    @relation("ScriptOwner")
+  handledAlerts   Alert[]     @relation("AlertHandler")
+  handledFaults   Fault[]     @relation("FaultHandler")
+  userRoles       UserRole[]
+  executorTasks   DeployTask[] @relation("DeployExecutor")
+  auditLogs       AuditLog[]
+}
+
+// 角色表
+model Role {
+  id          Int      @id @default(autoincrement())
+  roleName    String   @unique
+  roleCode    String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  userRoles         UserRole[]
+  rolePermissions   RolePermission[]
+}
+
+// 权限表
+model Permission {
+  id           Int      @id @default(autoincrement())
+  permName     String
+  permCode     String   @unique
+  permType     String   // menu:菜单 button:按钮 api:接口
+  resourcePath String?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 关联
+  rolePermissions RolePermission[]
+}
+
+// 用户角色关联表
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roleId    Int
+  createdAt DateTime @default(now())
+
+  // 关联
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+// 角色权限关联表
+model RolePermission {
+  id         Int      @id @default(autoincrement())
+  roleId     Int
+  permissionId Int
+  createdAt  DateTime @default(now())
+
+  // 关联
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+// ============================================
+// 应用与部署相关表
+// ============================================
+
+// 应用表
+model App {
+  id            Int      @id @default(autoincrement())
+  appName       String
+  appCode       String   @unique
+  appType       String   @default("docker") // docker/k8s/shell
+  repoUrl       String?
+  dockerfile    String?
+  configFiles   String?  // JSON
+  healthCheckPath String?
+  preScript     String?
+  postScript    String?
+  envVars       String?  // JSON
+  description   String?
+  ownerId       Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 关联
+  owner         User?        @relation("AppOwner", fields: [ownerId], references: [id])
+  deployTasks   DeployTask[]
+  configs       Config[]
+}
+
+// 部署任务表
+model DeployTask {
+  id          Int       @id @default(autoincrement())
+  appId       Int
+  environment String    // dev/staging/prod
+  version     String
+  strategy    String    @default("normal") // normal/blue_green/canary
+  status      String    @default("pending") // pending/running/success/failed/rollback
+  progress    Int       @default(0)
+  deployLog   String?   // LongText
+  result      String?
+  executorId  Int?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联
+  app       App   @relation(fields: [appId], references: [id], onDelete: Cascade)
+  executor  User? @relation("DeployExecutor", fields: [executorId], references: [id])
+}
+
+// ============================================
+// 脚本相关表
+// ============================================
+
+// 脚本表
+model Script {
+  id          Int      @id @default(autoincrement())
+  scriptName  String
+  scriptCode  String   @unique
+  scriptType  String   // shell/python/ansible/yaml/json
+  content     String   // LongText
+  params      String?  // JSON 参数配置
+  category    String?
+  tags        String?  // 逗号分隔
+  version     Int      @default(1)
+  description String?
+  ownerId     Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  owner          User?             @relation("ScriptOwner", fields: [ownerId], references: [id])
+  executions     ScriptExecution[]
+  versions       ScriptVersion[]
+}
+
+// 脚本版本表
+model ScriptVersion {
+  id          Int      @id @default(autoincrement())
+  scriptId    Int
+  version     Int
+  content     String
+  changeNote  String?
+  createdBy   Int?
+  createdAt   DateTime @default(now())
+
+  // 关联
+  script Script @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+}
+
+// 脚本执行记录表
+model ScriptExecution {
+  id          Int       @id @default(autoincrement())
+  scriptId    Int
+  params      String?   // JSON
+  targetHost  String?
+  status      String    @default("pending") // pending/running/success/failed/timeout
+  output      String?   // LongText
+  errorOutput String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  // 关联
+  script Script @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 配置相关表
+// ============================================
+
+// 配置表
+model Config {
+  id          Int      @id @default(autoincrement())
+  configName  String
+  configKey   String
+  appId       Int?
+  environment String?  // dev/staging/prod
+  configType  String   @default("key-value") // file/key-value/json/yaml
+  configValue String?  // LongText
+  version     Int      @default(1)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  app      App?          @relation(fields: [appId], references: [id], onDelete: Cascade)
+  versions ConfigVersion[]
+}
+
+// 配置版本表
+model ConfigVersion {
+  id          Int      @id @default(autoincrement())
+  configId    Int
+  version     Int
+  configValue String
+  changeNote  String?
+  createdBy   Int?
+  createdAt   DateTime @default(now())
+
+  // 关联
+  config Config @relation(fields: [configId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 监控相关表
+// ============================================
+
+// 监控指标表
+model Monitor {
+  id          Int      @id @default(autoincrement())
+  monitorName String
+  metricName  String
+  targetType  String   // host/app/service
+  targetId    String?
+  collectType String   @default("agent") // agent/jmx/http
+  collectPath String?
+  interval    Int      @default(10) // 秒
+  description String?
+  status      Int      @default(1) // 1:启用 0:禁用
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  metrics MetricData[]
+}
+
+// 监控数据表（时序数据）
+model MetricData {
+  id          Int       @id @default(autoincrement())
+  monitorId   Int
+  value       Float
+  timestamp   DateTime
+  createdAt   DateTime  @default(now())
+
+  // 关联
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, timestamp])
+}
+
+// 告警规则表
+model AlertRule {
+  id           Int      @id @default(autoincrement())
+  ruleName     String
+  targetType   String   // host/app/custom
+  targetId     String?
+  metricName   String
+  condition    String   // >/< /==
+  threshold    Float
+  duration     Int      @default(60) // 秒
+  alertLevel   String   // P0/P1/P2
+  message      String?
+  notifyChannels String? // JSON 邮件/短信/钉钉/飞书
+  notifyUsers   String? // JSON
+  status       Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 关联
+  alerts Alert[]
+}
+
+// 告警记录表
+model Alert {
+  id          Int       @id @default(autoincrement())
+  ruleId      Int?
+  alertName   String
+  alertLevel  String
+  targetType  String
+  targetId    String?
+  metricName  String?
+  metricValue String?
+  threshold   String?
+  message     String?
+  status      String    @default("pending") // pending/acknowledged/resolved
+  handlerId   Int?
+  handleTime  DateTime?
+  handleNote  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联
+  rule    AlertRule? @relation(fields: [ruleId], references: [id])
+  handler User?      @relation("AlertHandler", fields: [handlerId], references: [id])
+}
+
+// ============================================
+// 日志相关表
+// ============================================
+
+// 日志表（索引）
+model LogEntry {
+  id        Int       @id @default(autoincrement())
+  timestamp DateTime
+  level     String    // INFO/WARN/ERROR
+  service   String?
+  host      String?
+  message   String
+  traceId   String?
+  spanId    String?
+  extra     String?   // JSON 额外字段
+  createdAt DateTime  @default(now())
+
+  @@index([timestamp])
+  @@index([level])
+  @@index([service])
+}
+
+// ============================================
+// 故障相关表
+// ============================================
+
+// 故障表
+model Fault {
+  id          Int       @id @default(autoincrement())
+  faultTitle  String
+  faultLevel  String    // P0/P1/P2
+  faultType  String?
+  targetType  String?
+  targetId    String?
+  rootCause   String?
+  solution    String?
+  status      String    @default("open") // open/handling/resolved/closed
+  handlerId   Int?
+  occurredAt  DateTime?
+  detectedAt  DateTime?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联
+  handler User?   @relation("FaultHandler", fields: [handlerId], references: [id])
+}
+
+// ============================================
+// 镜像相关表
+// ============================================
+
+// 镜像仓库表
+model ImageRepo {
+  id          Int      @id @default(autoincrement())
+  repoName    String
+  repoType    String   @default("harbor") // harbor/ecr/gcr
+  repoUrl     String
+  username    String?
+  password    String?  // 加密存储
+  description String?
+  status      Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  images Image[]
+}
+
+// 镜像表
+model Image {
+  id          Int       @id @default(autoincrement())
+  repoId      Int?
+  imageName   String
+  tag         String    @default("latest")
+  imageSize   BigInt    @default(0)
+  digest      String?
+  scanStatus  String?   // pending/passed/failed
+  scanReport  String?
+  lastPulledAt DateTime?
+  pullCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联
+  repo ImageRepo @relation(fields: [repoId], references: [id])
+}
+
+// ============================================
+// 备份相关表
+// ============================================
+
+// 数据库表
+model Database {
+  id        Int      @id @default(autoincrement())
+  dbName    String
+  dbType    String   // mysql/postgresql/mongodb
+  host      String
+  port      Int
+  username  String?
+  password  String?  // 加密存储
+  description String?
+  status    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联
+  backups Backup[]
+}
+
+// 备份记录表
+model Backup {
+  id           Int       @id @default(autoincrement())
+  databaseId   Int
+  backupType   String    // full/incremental
+  backupPath   String?
+  backupSize   BigInt    @default(0)
+  status       String    @default("pending") // pending/running/success/failed
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+
+  // 关联
+  database Database @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 巡检相关表
+// ============================================
+
+// 巡检任务表
+model CheckTask {
+  id           Int       @id @default(autoincrement())
+  taskName     String
+  taskType     String?   // host/app/service
+  targetId     String?
+  checkItems   String    // JSON 巡检项
+  scheduleType String?   // once/daily/weekly/monthly
+  scheduleCron String?
+  nextRunAt    DateTime?
+  lastRunAt    DateTime?
+  status       String    @default("enabled") // enabled/disabled
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // 关联
+  reports CheckReport[]
+}
+
+// 巡检报告表
+model CheckReport {
+  id         Int       @id @default(autoincrement())
+  taskId     Int
+  startAt    DateTime?
+  endAt      DateTime?
+  result     String?    // JSON 检查结果
+  summary    String?
+  status     String    @default("pending") // pending/running/success/failed
+  createdAt  DateTime  @default(now())
+
+  // 关联
+  task CheckTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 审计与通知相关表
+// ============================================
+
+// 审计日志表
+model AuditLog {
+  id           Int       @id @default(autoincrement())
+  userId       Int?
+  username     String?
+  action       String
+  resourceType String?
+  resourceId   Int?
+  detail       String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  // 关联
+  user User? @relation(fields: [userId], references: [id])
+}
+
+// 通知记录表
+model Notification {
+  id         Int       @id @default(autoincrement())
+  channel    String    // email/sms/dingtalk/feishu
+  recipient  String
+  subject    String?
+  content    String
+  status     String    @default("pending") // pending/success/failed
+  sentAt     DateTime?
+  errorMsg   String?
+  createdAt  DateTime  @default(now())
+}
+
+// ============================================
+// 通知渠道配置表
+// ============================================
+
+// 通知渠道表
+model NotifyChannel {
+  id       Int      @id @default(autoincrement())
+  name     String
+  type     String   // email/sms/dingtalk/feishu
+  config   String   // JSON 配置
+  status   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

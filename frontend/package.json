@@ -1,0 +1,53 @@
+{
+  "name": "insight-devops-frontend",
+  "version": "1.0.0",
+  "description": "天鹂可视化运维平台 - 前端",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "test": "vitest",
+    "test:unit": "vitest run --dir tests/unit",
+    "test:integration": "vitest run --dir tests/integration",
+    "test:api": "vitest run --dir tests/api",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:api && npm run test:e2e",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "pinia": "^2.1.7",
+    "axios": "^1.6.8",
+    "ant-design-vue": "^4.1.2",
+    "dayjs": "^1.11.10",
+    "echarts": "^5.5.0",
+    "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0",
+    "vue-tsc": "^2.0.6",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.11.30",
+    "@types/lodash-es": "^4.17.12",
+    "vitest": "^1.4.0",
+    "@vue/test-utils": "^2.4.5",
+    "jsdom": "^24.0.0",
+    "@testing-library/vue": "^8.0.3",
+    "@testing-library/jest-dom": "^6.4.2",
+    "msw": "^2.2.13",
+    "playwright": "^1.42.1",
+    "@playwright/test": "^1.42.1",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.23.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.1",
+    "@vitest/coverage-v8": "^1.4.0"
+  }
+}
