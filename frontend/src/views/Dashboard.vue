@@ -39,7 +39,7 @@
         </a-card>
       </a-col>
     </a-row>
-    
+
     <a-row :gutter="16" class="charts-row">
       <a-col :span="12">
         <a-card title="部署趋势">
@@ -52,7 +52,7 @@
         </a-card>
       </a-col>
     </a-row>
-    
+
     <a-row :gutter="16" class="lists-row">
       <a-col :span="12">
         <a-card title="最近部署" :body-style="{ padding: 0 }">
@@ -141,12 +141,12 @@ async function loadStats() {
       monitorApi.list({ pageSize: 1 }),
       alertApi.list({ pageSize: 1, status: 'pending' }),
     ])
-    
+
     stats.value = {
-      apps: appsRes.data.total,
-      deploys: deploysRes.data.total,
-      monitors: monitorsRes.data.total,
-      alerts: alertsRes.data.total,
+      apps: appsRes.data?.total || 0,
+      deploys: deploysRes.data?.total || 0,
+      monitors: monitorsRes.data?.total || 0,
+      alerts: alertsRes.data?.total || 0,
     }
   } catch (error) {
     console.error('Failed to load stats:', error)
@@ -156,7 +156,7 @@ async function loadStats() {
 async function loadRecentDeploys() {
   try {
     const res = await deployApi.list({ pageSize: 5 })
-    recentDeploys.value = res.data.list
+    recentDeploys.value = res.data?.list || []
   } catch (error) {
     console.error('Failed to load recent deploys:', error)
   }
@@ -165,7 +165,7 @@ async function loadRecentDeploys() {
 async function loadPendingAlerts() {
   try {
     const res = await alertApi.list({ pageSize: 5, status: 'pending' })
-    pendingAlerts.value = res.data.list
+    pendingAlerts.value = res.data?.list || []
   } catch (error) {
     console.error('Failed to load pending alerts:', error)
   }
@@ -189,7 +189,7 @@ function initCharts() {
       ],
     })
   }
-  
+
   if (resourceChartRef.value) {
     const chart = echarts.init(resourceChartRef.value)
     chart.setOption({

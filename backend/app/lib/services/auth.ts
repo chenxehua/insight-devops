@@ -8,7 +8,7 @@ import {
   TokenPayload 
 } from '../../lib/utils/auth'
 import { ApiResponse } from '../../lib/utils/common'
-import { getOne, runQuery } from '../../lib/database'
+import { getOne, getAll, runQuery } from '../../lib/database'
 
 // 登录
 export async function login(username: string, password: string): Promise<ApiResponse> {

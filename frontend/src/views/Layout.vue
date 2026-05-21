@@ -66,7 +66,7 @@
         </a-sub-menu>
       </a-menu>
     </a-layout-sider>
-    
+
     <a-layout>
       <a-layout-header class="header">
         <MenuFoldOutlined class="trigger" @click="collapsed = !collapsed" />
@@ -86,7 +86,7 @@
           </a-dropdown>
         </div>
       </a-layout-header>
-      
+
       <a-layout-content class="content">
         <router-view />
       </a-layout-content>

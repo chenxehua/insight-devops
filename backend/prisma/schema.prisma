@@ -535,3 +535,175 @@ model NotifyChannel {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============================================
+// 蓝绿部署表
+// ============================================
+
+model BlueGreenDeployment {
+  id              Int       @id @default(autoincrement())
+  deployTaskId    Int       // 关联的部署任务
+  blueEnv         String?   // 蓝间环境标识
+  greenEnv        String?   // 绿间环境标识
+  trafficRatio    Int       @default(0)    // 流量切换比例 0-100
+  observationTime Int       @default(15)   // 观察期时长（分钟）
+  currentPhase    String    @default("deploying") // deploying/verifying/switching/observing/completed/failed
+  status          String    @default("running") // running/success/failed/rolled_back
+  switchAt        DateTime?
+  completedAt     DateTime?
+  metrics         String?   // JSON 监控指标数据
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // 关联
+  deployTask DeployTask @relation(fields: [deployTaskId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 金丝雀发布表
+// ============================================
+
+model CanaryDeployment {
+  id              Int       @id @default(autoincrement())
+  deployTaskId    Int       // 关联的部署任务
+  canaryRatio     Int       @default(10)   // 当前金丝雀比例 10/30/50/80/100
+  autoPromote     Int       @default(0)    // 是否自动提升 0:否 1:是
+  promoteConditions String? // JSON 自动提升条件
+  currentPhase    String    @default("creating") // creating/running/paused/completed/failed
+  status          String    @default("running") // running/success/failed/rolled_back
+  startedAt       DateTime?
+  completedAt     DateTime?
+  metrics         String?   // JSON 指标对比数据
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // 关联
+  deployTask DeployTask @relation(fields: [deployTaskId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 批量部署表
+// ============================================
+
+model BatchDeployment {
+  id              Int       @id @default(autoincrement())
+  name            String
+  description     String?
+  totalCount      Int       @default(0)
+  successCount    Int       @default(0)
+  failedCount     Int       @default(0)
+  runningCount    Int       @default(0)
+  concurrency     Int       @default(5)    // 并发数
+  status          String    @default("pending") // pending/running/paused/completed/failed
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdBy       Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // 关联
+  tasks BatchDeploymentTask[]
+}
+
+// 批量部署子任务表
+model BatchDeploymentTask {
+  id              Int       @id @default(autoincrement())
+  batchId         Int
+  deployTaskId    Int       // 关联的部署任务
+  appId           Int
+  environment     String
+  version         String
+  status          String    @default("pending") // pending/running/success/failed/skipped
+  errorMessage    String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  // 关联
+  batch      BatchDeployment @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  deployTask DeployTask      @relation(fields: [deployTaskId], references: [id])
+}
+
+// ============================================
+// 健康检查表
+// ============================================
+
+model HealthCheck {
+  id            Int       @id @default(autoincrement())
+  appId         Int?      // 关联应用
+  checkType     String    // http/tcp/script
+  checkTarget   String    // 检查目标（URL/端口/脚本ID）
+  checkPath     String?   // HTTP检查路径
+  checkPort     Int?      // TCP检查端口
+  checkScript   String?   // 自定义检查脚本
+  timeout       Int       @default(30)      // 超时时间（秒）
+  retryTimes    Int       @default(3)       // 重试次数
+  interval      Int       @default(10)      // 检查间隔（秒）
+  expectedResp  String?   // 预期响应
+  status        String    @default("enabled") // enabled/disabled
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  app App? @relation(fields: [appId], references: [id], onDelete: Cascade)
+}
+
+// 健康检查记录表
+model HealthCheckRecord {
+  id          Int       @id @default(autoincrement())
+  checkId     Int
+  checkResult String    // healthy/unhealthy
+  responseTime Int?     // 响应时间（毫秒）
+  statusCode  Int?      // HTTP状态码
+  errorMsg    String?
+  checkData   String?   // JSON 额外数据
+  checkedAt   DateTime  @default(now())
+
+  // 关联
+  check HealthCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 脚本定时任务表
+// ============================================
+
+model ScriptSchedule {
+  id             Int       @id @default(autoincrement())
+  scriptId       Int
+  taskName       String
+  scheduleType   String    // once/interval/cron
+  cronExpression String?   // Cron表达式
+  intervalSeconds Int?      // 间隔秒数（interval类型使用）
+  executeTime    DateTime? // 一次性执行时间
+  nextRunAt      DateTime?
+  lastRunAt      DateTime?
+  params         String?   // JSON 执行参数
+  targetHost     String?   // 执行目标
+  status         String    @default("enabled") // enabled/paused/stopped
+  consecutiveFails Int      @default(0) // 连续失败次数
+  createdBy      Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // 关联
+  script Script @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// 脚本通知配置表
+// ============================================
+
+model ScriptNotification {
+  id            Int       @id @default(autoincrement())
+  scriptId      Int?      // 关联脚本（可选，全局配置）
+  triggerType   String    // success/failure/timeout/always
+  channelType   String    // email/dingtalk/feishu/sms
+  recipientList String    // JSON 接收人列表
+  notifyTemplate String?  // JSON 通知模板
+  status        Int       @default(1) // 1:启用 0:禁用
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  script Script? @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+}
