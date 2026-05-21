@@ -1,5 +1,5 @@
 // API服务层
-import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios'
+import axios, { AxiosInstance, AxiosError } from 'axios'
 import { message } from 'ant-design-vue'
 
 // 创建axios实例

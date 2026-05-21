@@ -69,7 +69,7 @@ app.use(notFoundMiddleware)
 app.use(errorMiddleware)
 
 // 启动服务器
-const PORT = config.server.port || 3000
+const PORT = config.port || 3000
 
 if (process.env.NODE_ENV !== 'test') {
   const startServer = async () => {
