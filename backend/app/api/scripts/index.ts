@@ -261,7 +261,9 @@ router.post('/:id/execute', asyncHandler(async (req: Request, res: Response) => 
     VALUES (?, ?, ?, 'pending')
   `, [id, params ? JSON.stringify(params) : null, targetHost || null])
   
-  const execId = getLastInsertRowId()
+  // 获取刚插入的执行记录ID
+  const insertedExec = getOne('SELECT id FROM script_executions WHERE script_id = ? ORDER BY id DESC', [id])
+  const execId = insertedExec?.id || 0
   
   res.json({ code: 200, message: '脚本执行任务已创建', data: { id: execId } })
 }))
