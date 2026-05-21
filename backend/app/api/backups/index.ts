@@ -80,7 +80,9 @@ router.post('/databases', asyncHandler(async (req: Request, res: Response) => {
     password ? Buffer.from(password).toString('base64') : null, description || null
   ])
   
-  const dbId = getLastInsertRowId()
+  // 获取刚插入的数据库ID
+  const insertedDb = getOne('SELECT id FROM databases WHERE db_name = ? ORDER BY id DESC', [dbName])
+  const dbId = insertedDb?.id || 0
   
   res.json({ code: 200, message: '创建成功', data: { id: dbId } })
 }))
@@ -249,7 +251,9 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     VALUES (?, ?, 'pending')
   `, [databaseId, backupType])
   
-  const backupId = getLastInsertRowId()
+  // 获取刚插入的备份ID
+  const insertedBackup = getOne('SELECT id FROM backups WHERE database_id = ? ORDER BY id DESC', [databaseId])
+  const backupId = insertedBackup?.id || 0
   
   res.json({ code: 200, message: '备份任务已创建', data: { id: backupId } })
 }))
@@ -338,7 +342,9 @@ router.post('/:id/restore', asyncHandler(async (req: Request, res: Response) => 
     VALUES (?, 'restore', 'restoring')
   `, [backup.database_id])
   
-  const restoreId = getLastInsertRowId()
+  // 获取刚插入的恢复记录ID
+  const insertedRestore = getOne('SELECT id FROM backups WHERE database_id = ? AND status = ? ORDER BY id DESC', [backup.database_id, 'restoring'])
+  const restoreId = insertedRestore?.id || 0
   
   // 模拟恢复操作（实际场景中应该执行实际的恢复命令）
   res.json({

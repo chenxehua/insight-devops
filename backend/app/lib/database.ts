@@ -252,6 +252,7 @@ export async function initDatabase(): Promise<void> {
       change_note TEXT,
       created_by INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT,
       FOREIGN KEY (config_id) REFERENCES configs(id) ON DELETE CASCADE
     )
   `)
@@ -434,6 +435,7 @@ export async function initDatabase(): Promise<void> {
       finished_at TEXT,
       error_message TEXT,
       created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT,
       FOREIGN KEY (database_id) REFERENCES databases(id) ON DELETE CASCADE
     )
   `)

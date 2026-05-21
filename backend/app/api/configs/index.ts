@@ -134,7 +134,9 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     configType || 'key-value', configValue || null, description || null
   ])
   
-  const configId = getLastInsertRowId()
+  // 获取刚插入的配置ID
+  const insertedConfig = getOne('SELECT id FROM configs WHERE config_key = ? ORDER BY id DESC', [configKey])
+  const configId = insertedConfig?.id || 0
   
   // 创建初始版本
   runQuery(`

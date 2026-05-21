@@ -12,10 +12,9 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id)
   
   const execution = getOne(`
-    SELECT se.*, s.script_name, s.script_code, u.username as executor_name
+    SELECT se.*, s.script_name, s.script_code
     FROM script_executions se
     INNER JOIN scripts s ON se.script_id = s.id
-    LEFT JOIN users u ON se.executor_id = u.id
     WHERE se.id = ?
   `, [id])
   
@@ -36,8 +35,6 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
       status: execution.status,
       output: execution.output,
       errorOutput: execution.error_output,
-      executorId: execution.executor_id,
-      executorName: execution.executor_name,
       startedAt: execution.started_at,
       finishedAt: execution.finished_at,
       createdAt: execution.created_at,

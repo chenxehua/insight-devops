@@ -227,13 +227,14 @@ model Config {
 
 // 配置版本表
 model ConfigVersion {
-  id          Int      @id @default(autoincrement())
+  id          Int      @id(@default(autoincrement()))
   configId    Int
   version     Int
   configValue String
   changeNote  String?
   createdBy   Int?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // 关联
   config Config @relation(fields: [configId], references: [id], onDelete: Cascade)
@@ -444,6 +445,7 @@ model Backup {
   finishedAt   DateTime?
   errorMessage String?
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // 关联
   database Database @relation(fields: [databaseId], references: [id], onDelete: Cascade)
