@@ -89,6 +89,11 @@ export const useBackupStore = defineStore('backup', () => {
     return res.data
   }
 
+  async function restoreBackup(id: number) {
+    const res = await backupApi.restore(id)
+    return res.data
+  }
+
   function setPage(page: number) {
     pagination.value.page = page
   }
@@ -112,6 +117,7 @@ export const useBackupStore = defineStore('backup', () => {
     createBackup,
     updateBackup,
     deleteBackup,
+    restoreBackup,
     setPage,
     setPageSize,
   }

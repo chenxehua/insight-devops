@@ -309,4 +309,47 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   res.json({ code: 200, message: '删除成功' })
 }))
 
+// POST /api/backups/:id/restore - 恢复备份
+router.post('/:id/restore', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id)
+  
+  const backup = getOne(`
+    SELECT b.*, d.db_name, d.db_type, d.host, d.port
+    FROM backups b
+    INNER JOIN databases d ON b.database_id = d.id
+    WHERE b.id = ?
+  `, [id])
+  
+  if (!backup) {
+    return res.status(404).json({ code: 404, message: '备份记录不存在' })
+  }
+  
+  if (backup.status !== 'success') {
+    return res.status(400).json({ code: 400, message: '只能恢复成功的备份' })
+  }
+  
+  if (!backup.backup_path) {
+    return res.status(400).json({ code: 400, message: '备份文件路径不存在' })
+  }
+  
+  // 创建恢复记录
+  runQuery(`
+    INSERT INTO backups (database_id, backup_type, status)
+    VALUES (?, 'restore', 'restoring')
+  `, [backup.database_id])
+  
+  const restoreId = getLastInsertRowId()
+  
+  // 模拟恢复操作（实际场景中应该执行实际的恢复命令）
+  res.json({
+    code: 200,
+    message: '恢复任务已启动',
+    data: {
+      restoreId,
+      databaseName: backup.db_name,
+      backupPath: backup.backup_path,
+    }
+  })
+}))
+
 export default router

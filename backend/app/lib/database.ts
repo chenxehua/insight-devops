@@ -531,6 +531,28 @@ export function closeDatabase(): void {
   }
 }
 
+// 重置数据库（清除所有数据但保留表结构）
+export async function resetDatabase(): Promise<void> {
+  const database = await getDatabase()
+  
+  // 获取所有表名
+  const tables = database.exec(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' AND name NOT LIKE 'sqlite_%'
+  `)
+  
+  if (tables.length > 0 && tables[0].values) {
+    for (const row of tables[0].values) {
+      const tableName = row[0] as string
+      // 禁用外键约束，清除数据，重新启用外键约束
+      database.run(`DELETE FROM "${tableName}"`)
+    }
+  }
+  
+  saveDatabase()
+  console.log('✅ 数据库已重置')
+}
+
 // 带自动保存的数据库执行
 export function runQuery(sql: string, params: any[] = []): void {
   const database = db

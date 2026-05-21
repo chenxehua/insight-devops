@@ -14,13 +14,16 @@ import roleRoutes from './api/roles'
 import appRoutes from './api/apps'
 import deployRoutes from './api/deploys'
 import scriptRoutes from './api/scripts'
+import scriptExecutionRoutes from './api/scripts/executions'
 import configRoutes from './api/configs'
+import configVersionRoutes from './api/configs/versions'
 import monitorRoutes from './api/monitors'
 import logRoutes from './api/logs'
 import faultRoutes from './api/faults'
 import imageRoutes from './api/images'
 import backupRoutes from './api/backups'
 import checkRoutes from './api/checks'
+import dashboardRoutes from './api/dashboard'
 
 // 创建应用
 const app: Application = express()
@@ -43,13 +46,16 @@ app.use('/api/roles', roleRoutes)
 app.use('/api/apps', appRoutes)
 app.use('/api/deploys', deployRoutes)
 app.use('/api/scripts', scriptRoutes)
+app.use('/api/scripts/executions', scriptExecutionRoutes)
 app.use('/api/configs', configRoutes)
+app.use('/api/configs', configVersionRoutes)
 app.use('/api/monitors', monitorRoutes)
 app.use('/api/logs', logRoutes)
 app.use('/api/faults', faultRoutes)
 app.use('/api/images', imageRoutes)
 app.use('/api/backups', backupRoutes)
 app.use('/api/checks', checkRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 
 // 健康检查
 app.get('/health', (req, res) => {
@@ -63,35 +69,40 @@ app.use(notFoundMiddleware)
 app.use(errorMiddleware)
 
 // 启动服务器
-async function startServer() {
-  try {
-    // 初始化数据库
-    await initDatabase()
-    
-    app.listen(config.port, () => {
-      logInfo(`🚀 服务器启动成功，端口: ${config.port}`)
-      logInfo(`📝 环境: ${config.env}`)
-      logInfo(`🔗 API地址: http://localhost:${config.port}/api`)
-    })
-  } catch (error) {
-    logError('服务器启动失败', error)
-    process.exit(1)
+const PORT = config.server.port || 3000
+
+if (process.env.NODE_ENV !== 'test') {
+  const startServer = async () => {
+    try {
+      // 初始化数据库
+      await initDatabase()
+      logInfo('Database initialized successfully')
+      
+      // 启动服务器
+      app.listen(PORT, () => {
+        logInfo(`Server is running on port ${PORT}`)
+      })
+    } catch (error) {
+      logError('Failed to start server', error)
+      process.exit(1)
+    }
   }
+  
+  startServer()
 }
 
+// 导出应用用于测试
+export { app }
+
 // 优雅关闭
-process.on('SIGTERM', () => {
-  logInfo('收到SIGTERM信号，开始关闭服务器...')
-  closeDatabase()
+process.on('SIGTERM', async () => {
+  logInfo('SIGTERM received, shutting down gracefully')
+  await closeDatabase()
   process.exit(0)
 })
 
-process.on('SIGINT', () => {
-  logInfo('收到SIGINT信号，开始关闭服务器...')
-  closeDatabase()
+process.on('SIGINT', async () => {
+  logInfo('SIGINT received, shutting down gracefully')
+  await closeDatabase()
   process.exit(0)
 })
-
-startServer()
-
-export default app

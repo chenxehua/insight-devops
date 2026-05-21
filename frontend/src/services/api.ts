@@ -117,7 +117,9 @@ export const deployApi = {
   update: (id: number, data: any) => api.put(`/deploys/${id}`, data),
   delete: (id: number) => api.delete(`/deploys/${id}`),
   execute: (id: number) => api.post(`/deploys/${id}/execute`),
+  cancel: (id: number) => api.post(`/deploys/${id}/cancel`),
   rollback: (id: number) => api.post(`/deploys/${id}/rollback`),
+  getLogs: (id: number) => api.get(`/deploys/${id}/logs`),
 }
 
 // Script API
@@ -133,6 +135,7 @@ export const scriptApi = {
     api.post(`/scripts/${id}/execute`, params || {}),
   getExecutions: (id: number, params?: { page?: number; pageSize?: number }) => 
     api.get(`/scripts/${id}/executions`, { params }),
+  getExecutionById: (execId: number) => api.get(`/scripts/executions/${execId}`),
 }
 
 // Config API
@@ -144,6 +147,9 @@ export const configApi = {
   update: (id: number, data: any) => api.put(`/configs/${id}`, data),
   delete: (id: number) => api.delete(`/configs/${id}`),
   getVersions: (id: number) => api.get(`/configs/${id}/versions`),
+  rollback: (id: number, targetVersion: number) => api.post(`/configs/${id}/rollback`, { targetVersion }),
+  getDiff: (id: number, from?: number, to?: number) => 
+    api.get(`/configs/${id}/diff`, { params: { from, to } }),
 }
 
 // Monitor API
@@ -223,6 +229,13 @@ export const backupApi = {
   create: (data: { databaseId: number; backupType: string }) => api.post('/backups', data),
   update: (id: number, data: any) => api.put(`/backups/${id}`, data),
   delete: (id: number) => api.delete(`/backups/${id}`),
+  restore: (id: number) => api.post(`/backups/${id}/restore`),
+}
+
+// Dashboard API
+export const dashboardApi = {
+  getStats: () => api.get('/dashboard/stats'),
+  getTrend: (days?: number) => api.get('/dashboard/trend', { params: { days } }),
 }
 
 // Check API

@@ -244,4 +244,54 @@ router.post('/:id/rollback', asyncHandler(async (req: Request, res: Response) =>
   res.json({ code: 200, message: '回滚任务已启动' })
 }))
 
+// POST /api/deploys/:id/cancel - 取消部署
+router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id)
+  
+  const task = getOne('SELECT id, status FROM deploy_tasks WHERE id = ?', [id])
+  if (!task) {
+    return res.status(404).json({ code: 404, message: '部署任务不存在' })
+  }
+  
+  if (task.status === 'success' || task.status === 'failed') {
+    return res.status(400).json({ code: 400, message: '已完成的部署任务无法取消' })
+  }
+  
+  // 更新状态为cancelled
+  runQuery(`
+    UPDATE deploy_tasks SET status = 'cancelled', finished_at = datetime('now'),
+    updated_at = datetime('now') WHERE id = ?
+  `, [id])
+  
+  res.json({ code: 200, message: '部署任务已取消' })
+}))
+
+// GET /api/deploys/:id/logs - 获取部署日志
+router.get('/:id/logs', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id)
+  
+  const task = getOne('SELECT id, deploy_log, status FROM deploy_tasks WHERE id = ?', [id])
+  if (!task) {
+    return res.status(404).json({ code: 404, message: '部署任务不存在' })
+  }
+  
+  // 模拟实时日志（实际场景中应该从日志系统获取）
+  const logs = task.deploy_log ? task.deploy_log.split('\n') : []
+  
+  res.json({
+    code: 200,
+    message: 'success',
+    data: {
+      taskId: id,
+      status: task.status,
+      logs: logs.map((line, index) => ({
+        line: index + 1,
+        content: line,
+        timestamp: new Date(Date.now() - (logs.length - index) * 1000).toISOString()
+      })),
+      totalLines: logs.length
+    }
+  })
+}))
+
 export default router

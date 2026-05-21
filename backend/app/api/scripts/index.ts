@@ -264,6 +264,44 @@ router.post('/:id/execute', asyncHandler(async (req: Request, res: Response) => 
   res.json({ code: 200, message: '脚本执行任务已创建', data: { id: execId } })
 }))
 
+// GET /api/scripts/executions/:id - 执行结果详情 (单独路由，需放在 /:id 路由之前)
+router.get('/executions/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id)
+  
+  const execution = getOne(`
+    SELECT se.*, s.script_name, s.script_code, u.username as executor_name
+    FROM script_executions se
+    INNER JOIN scripts s ON se.script_id = s.id
+    LEFT JOIN users u ON se.executor_id = u.id
+    WHERE se.id = ?
+  `, [id])
+  
+  if (!execution) {
+    return res.status(404).json({ code: 404, message: '执行记录不存在' })
+  }
+  
+  res.json({
+    code: 200,
+    message: 'success',
+    data: {
+      id: execution.id,
+      scriptId: execution.script_id,
+      scriptName: execution.script_name,
+      scriptCode: execution.script_code,
+      params: execution.params ? JSON.parse(execution.params) : null,
+      targetHost: execution.target_host,
+      status: execution.status,
+      output: execution.output,
+      errorOutput: execution.error_output,
+      executorId: execution.executor_id,
+      executorName: execution.executor_name,
+      startedAt: execution.started_at,
+      finishedAt: execution.finished_at,
+      createdAt: execution.created_at,
+    }
+  })
+}))
+
 // GET /api/scripts/:id/executions - 脚本执行记录
 router.get('/:id/executions', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id)

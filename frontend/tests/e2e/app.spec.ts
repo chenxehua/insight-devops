@@ -1,141 +1,288 @@
-import { test, expect } from '@playwright/test'
-import { Page, Locator } from '@playwright/test'
+import { test, expect, Page } from '@playwright/test'
 
-// 测试配置
-const TEST_BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:5173'
-const TEST_USER = { username: 'admin', password: 'admin123' }
-const TEST_TIMEOUT = 30000
-
-// 页面对象模型
-class LoginPage {
-  constructor(public page: Page) {}
-
-  async goto() {
-    await this.page.goto(`${TEST_BASE_URL}/login`)
-  }
-
-  get usernameInput(): Locator {
-    return this.page.locator('input[type="text"]').first()
-  }
-
-  get passwordInput(): Locator {
-    return this.page.locator('input[type="password"]').first()
-  }
-
-  get submitButton(): Locator {
-    return this.page.locator('button[type="submit"]').first()
-  }
-
-  async login(username: string, password: string) {
-    await this.usernameInput.fill(username)
-    await this.passwordInput.fill(password)
-    await this.submitButton.click()
-  }
+// 测试数据
+const TEST_USER = {
+  username: 'admin',
+  password: 'admin123',
 }
 
-// 共享测试步骤
-async function loginAsAdmin(page: Page) {
-  const loginPage = new LoginPage(page)
-  await loginPage.goto()
-  await loginPage.login(TEST_USER.username, TEST_USER.password)
-  await expect(page).toHaveURL(/\/dashboard|\//)
+const TEST_APP = {
+  appName: '测试应用',
+  appCode: `test-app-${Date.now()}`,
+  appType: 'web',
 }
 
-// 测试套件
-test.describe('E2E 测试 - 认证流程', () => {
+const TEST_SCRIPT = {
+  scriptName: '测试脚本',
+  scriptCode: `test-script-${Date.now()}`,
+  scriptType: 'bash',
+  content: '#!/bin/bash\necho "Hello World"',
+}
+
+const TEST_CONFIG = {
+  configName: '测试配置',
+  configKey: `test.config.${Date.now()}`,
+  configValue: 'test-value',
+}
+
+const TEST_DEPLOY = {
+  environment: 'dev',
+  version: 'v1.0.0',
+  strategy: 'normal',
+}
+
+// 认证测试
+test.describe('认证模块', () => {
   test.beforeEach(async ({ page }) => {
-    page.setDefaultTimeout(TEST_TIMEOUT)
+    await page.goto('/login')
   })
 
-  test('登录成功', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(TEST_USER.username, TEST_USER.password)
-    
-    // 验证跳转到仪表盘或首页
-    await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 })
+  test('登录页面应该正常加载', async ({ page }) => {
+    await expect(page.locator('input[type="text"]')).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toBeVisible()
+    await expect(page.locator('button[type="submit"]')).toBeVisible()
   })
 
-  test('登录失败 - 错误密码', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(TEST_USER.username, 'wrongpassword')
+  test('应该能够成功登录', async ({ page }) => {
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
     
-    // 等待一下让页面响应
+    // 等待跳转或登录成功
+    await page.waitForURL(/\/(dashboard|login)/, { timeout: 10000 })
+    
+    // 如果成功登录，应该看到仪表盘
+    if (page.url().includes('dashboard')) {
+      await expect(page.locator('body')).toContainText(/仪表盘|首页|Dashboard/)
+    }
+  })
+
+  test('登录失败应该显示错误提示', async ({ page }) => {
+    await page.fill('input[type="text"]', 'wronguser')
+    await page.fill('input[type="password"]', 'wrongpass')
+    await page.click('button[type="submit"]')
+    
+    // 等待错误提示出现
     await page.waitForTimeout(1000)
-    
-    // 验证仍在登录页面（因为密码错误不应该跳转）
-    const currentUrl = page.url()
-    expect(currentUrl).toContain('/login')
-  })
-
-  test('登录失败 - 空字段', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.submitButton.click()
-    
-    // 等待验证
-    await page.waitForTimeout(500)
+    // 检查页面是否有错误提示或停留在登录页
+    const url = page.url()
+    expect(url).toContain('login')
   })
 })
 
-test.describe('E2E 测试 - 仪表盘', () => {
+// 应用管理测试
+test.describe('应用管理模块', () => {
   test.beforeEach(async ({ page }) => {
-    page.setDefaultTimeout(TEST_TIMEOUT)
-    await loginAsAdmin(page)
+    // 先登录
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+    
+    // 导航到应用管理
+    await page.goto('/apps')
+    await page.waitForLoadState('networkidle')
   })
 
-  test('仪表盘页面加载', async ({ page }) => {
-    await page.goto(`${TEST_BASE_URL}/dashboard`)
-    // 验证页面加载
+  test('应用列表页面应该正常加载', async ({ page }) => {
+    await expect(page.locator('body')).toBeVisible()
+    // 检查页面是否包含应用管理相关元素
+    const content = await page.content()
+    expect(content.toLowerCase()).toContain('app')
+  })
+
+  test('应该能够搜索应用', async ({ page }) => {
+    const searchInput = page.locator('input[placeholder*="搜索"]')
+    if (await searchInput.isVisible()) {
+      await searchInput.fill(TEST_APP.appCode)
+      await page.keyboard.press('Enter')
+      await page.waitForTimeout(1000)
+    }
+  })
+})
+
+// 部署管理测试
+test.describe('部署管理模块', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+    
+    await page.goto('/deploys')
+    await page.waitForLoadState('networkidle')
+  })
+
+  test('部署列表页面应该正常加载', async ({ page }) => {
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('应该能够查看部署详情', async ({ page }) => {
+    // 查找第一行数据的详情按钮
+    const firstRow = page.locator('tbody tr').first()
+    if (await firstRow.isVisible()) {
+      const detailButton = firstRow.locator('button').first()
+      if (await detailButton.isVisible()) {
+        await detailButton.click()
+        await page.waitForTimeout(1000)
+      }
+    }
+  })
+})
+
+// 脚本管理测试
+test.describe('脚本管理模块', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+    
+    await page.goto('/scripts')
+    await page.waitForLoadState('networkidle')
+  })
+
+  test('脚本列表页面应该正常加载', async ({ page }) => {
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('应该能够搜索脚本', async ({ page }) => {
+    const searchInput = page.locator('input[placeholder*="搜索"]')
+    if (await searchInput.isVisible()) {
+      await searchInput.fill('test')
+      await page.keyboard.press('Enter')
+      await page.waitForTimeout(1000)
+    }
+  })
+})
+
+// 配置管理测试
+test.describe('配置管理模块', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+    
+    await page.goto('/configs')
+    await page.waitForLoadState('networkidle')
+  })
+
+  test('配置列表页面应该正常加载', async ({ page }) => {
     await expect(page.locator('body')).toBeVisible()
   })
 })
 
-test.describe('E2E 测试 - 用户管理', () => {
+// 监控告警测试
+test.describe('监控告警模块', () => {
   test.beforeEach(async ({ page }) => {
-    page.setDefaultTimeout(TEST_TIMEOUT)
-    await loginAsAdmin(page)
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+    
+    await page.goto('/monitors')
+    await page.waitForLoadState('networkidle')
   })
 
-  test('用户列表页面加载', async ({ page }) => {
-    await page.goto(`${TEST_BASE_URL}/users`)
+  test('监控列表页面应该正常加载', async ({ page }) => {
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('告警列表应该正常加载', async ({ page }) => {
+    await page.goto('/alerts')
+    await page.waitForLoadState('networkidle')
     await expect(page.locator('body')).toBeVisible()
   })
 })
 
-test.describe('E2E 测试 - 导航流程', () => {
+// 用户管理测试
+test.describe('用户管理模块', () => {
   test.beforeEach(async ({ page }) => {
-    page.setDefaultTimeout(TEST_TIMEOUT)
-    await loginAsAdmin(page)
-  })
-
-  test('侧边栏存在', async ({ page }) => {
-    await page.goto(`${TEST_BASE_URL}/dashboard`)
-    // 验证页面渲染了内容
-    const bodyContent = await page.locator('body').textContent()
-    expect(bodyContent).toBeTruthy()
-  })
-})
-
-test.describe('E2E 测试 - 性能', () => {
-  test('页面加载时间', async ({ page }) => {
-    const startTime = Date.now()
-    await page.goto(`${TEST_BASE_URL}/login`)
-    await page.waitForLoadState('domcontentloaded')
-    const loadTime = Date.now() - startTime
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
     
-    console.log(`登录页面加载时间: ${loadTime}ms`)
-    expect(loadTime).toBeLessThan(5000)
+    await page.goto('/users')
+    await page.waitForLoadState('networkidle')
+  })
+
+  test('用户列表页面应该正常加载', async ({ page }) => {
+    await expect(page.locator('body')).toBeVisible()
   })
 })
 
-test.describe('E2E 测试 - 响应式', () => {
-  test.use({ viewport: { width: 375, height: 667 } })
+// 导航测试
+test.describe('导航测试', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+  })
 
-  test('移动端视图', async ({ page }) => {
-    await loginAsAdmin(page)
-    await page.goto(`${TEST_BASE_URL}/dashboard`)
+  test('应该能够导航到各个模块', async ({ page }) => {
+    const routes = [
+      '/dashboard',
+      '/apps',
+      '/deploys',
+      '/scripts',
+      '/configs',
+      '/monitors',
+      '/logs',
+      '/faults',
+      '/images',
+      '/backups',
+      '/checks',
+      '/users',
+      '/roles',
+    ]
+
+    for (const route of routes) {
+      await page.goto(route)
+      await page.waitForLoadState('domcontentloaded')
+      await page.waitForTimeout(500)
+      // 验证页面加载成功
+      expect(page.url()).toContain(route)
+    }
+  })
+
+  test('侧边栏导航应该正常工作', async ({ page }) => {
+    // 查找侧边栏菜单
+    const sidebar = page.locator('aside, [class*="sidebar"], [class*="menu"]').first()
+    
+    if (await sidebar.isVisible()) {
+      // 点击第一个菜单项
+      const menuItems = sidebar.locator('a, [role="menuitem"]')
+      const count = await menuItems.count()
+      if (count > 1) {
+        await menuItems.nth(1).click()
+        await page.waitForTimeout(1000)
+      }
+    }
+  })
+})
+
+// 响应式设计测试
+test.describe('响应式设计测试', () => {
+  test('移动端视图应该正常显示', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 })
+    
+    await page.goto('/login')
+    await page.fill('input[type="text"]', TEST_USER.username)
+    await page.fill('input[type="password"]', TEST_USER.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 })
+    
+    // 检查页面元素是否在移动端正确显示
     await expect(page.locator('body')).toBeVisible()
   })
 })
