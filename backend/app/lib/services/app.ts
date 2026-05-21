@@ -50,6 +50,8 @@ export async function listApps(params: {
   `, [...queryParams, pageSize, offset])
   
   return {
+    code: 200,
+    message: 'success',
     data: paginate(
       list.map(a => ({
         id: a.id,
