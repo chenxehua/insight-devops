@@ -143,7 +143,7 @@ const fetchFaults = async () => {
       status: filterStatus.value || undefined, faultLevel: filterLevel.value || undefined, keyword: searchKeyword.value,
     })
     faults.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取故障列表失败') }
   finally { loading.value = false }
 }

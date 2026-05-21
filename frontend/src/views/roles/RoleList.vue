@@ -123,7 +123,7 @@ const fetchRoles = async () => {
       pageSize: pagination.pageSize,
     })
     roles.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) {
     message.error('获取角色列表失败')
   } finally {

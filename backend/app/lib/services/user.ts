@@ -9,40 +9,42 @@ export async function listUsers(params: {
   pageSize?: number
   keyword?: string
   status?: number
-}): Promise<{ data: PaginationResult<any> }> {
+}): Promise<ApiResponse> {
   const { page, pageSize } = parsePagination(params)
-  
+
   let where = 'WHERE is_deleted = 0'
   const queryParams: any[] = []
-  
+
   if (params.keyword) {
     where += ' AND (username LIKE ? OR email LIKE ? OR real_name LIKE ?)'
     const keyword = `%${params.keyword}%`
     queryParams.push(keyword, keyword, keyword)
   }
-  
+
   if (params.status !== undefined) {
     where += ' AND status = ?'
     queryParams.push(params.status)
   }
-  
+
   // 查询总数
   const totalResult = getOne(`
     SELECT COUNT(*) as count FROM users ${where}
   `, queryParams)
   const total = totalResult?.count || 0
-  
+
   // 查询列表
   const offset = (page - 1) * pageSize
   const list = getAll(`
     SELECT id, username, email, phone, real_name, status, last_login_at, created_at
-    FROM users 
+    FROM users
     ${where}
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
   `, [...queryParams, pageSize, offset])
-  
+
   return {
+    code: 200,
+    message: 'success',
     data: paginate(
       list.map(u => ({
         id: u.id,

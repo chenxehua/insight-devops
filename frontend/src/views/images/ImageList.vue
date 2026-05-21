@@ -136,7 +136,7 @@ const fetchRepos = async () => {
   try {
     const res = await imageApi.listRepos({ page: pagination.current, pageSize: pagination.pageSize, keyword: repoKeyword.value })
     repos.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取仓库列表失败') }
   finally { loading.value = false }
 }
@@ -146,7 +146,7 @@ const fetchImages = async () => {
   try {
     const res = await imageApi.list({ page: pagination.current, pageSize: pagination.pageSize, repoId: filterRepo.value, scanStatus: filterScanStatus.value || undefined })
     images.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取镜像列表失败') }
   finally { loading.value = false }
 }

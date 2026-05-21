@@ -116,7 +116,7 @@ const fetchConfigs = async () => {
       keyword: searchKeyword.value, environment: filterEnv.value || undefined,
     })
     configs.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取配置列表失败') }
   finally { loading.value = false }
 }

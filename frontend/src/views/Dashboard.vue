@@ -135,7 +135,7 @@ onMounted(async () => {
 
 async function loadStats() {
   try {
-    const [appsRes, deploysRes, monitorsRes, alertsRes] = await Promise.all([
+    const [appsRes, deploysRes, monitorsRes, alertsRes] = await Promise.allSettled([
       appApi.list({ pageSize: 1 }),
       deployApi.list({ pageSize: 1 }),
       monitorApi.list({ pageSize: 1 }),
@@ -143,10 +143,10 @@ async function loadStats() {
     ])
 
     stats.value = {
-      apps: appsRes.data?.total || 0,
-      deploys: deploysRes.data?.total || 0,
-      monitors: monitorsRes.data?.total || 0,
-      alerts: alertsRes.data?.total || 0,
+      apps: appsRes.status === 'fulfilled' ? appsRes.value.data?.total || 0 : 0,
+      deploys: deploysRes.status === 'fulfilled' ? deploysRes.value.data?.total || 0 : 0,
+      monitors: monitorsRes.status === 'fulfilled' ? monitorsRes.value.data?.total || 0 : 0,
+      alerts: alertsRes.status === 'fulfilled' ? alertsRes.value.data?.total || 0 : 0,
     }
   } catch (error) {
     console.error('Failed to load stats:', error)

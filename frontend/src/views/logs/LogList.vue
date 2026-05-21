@@ -99,7 +99,7 @@ const fetchLogs = async () => {
       startTime: dateRange.value?.[0]?.format('YYYY-MM-DD'), endTime: dateRange.value?.[1]?.format('YYYY-MM-DD'),
     })
     logs.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取日志列表失败') }
   finally { loading.value = false }
 }

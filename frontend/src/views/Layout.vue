@@ -62,6 +62,7 @@
           </template>
           <a-menu-item key="/images">镜像管理</a-menu-item>
           <a-menu-item key="/backups">备份管理</a-menu-item>
+          <a-menu-item key="/databases">数据库管理</a-menu-item>
           <a-menu-item key="/checks">巡检管理</a-menu-item>
         </a-sub-menu>
       </a-menu>

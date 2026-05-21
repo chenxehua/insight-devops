@@ -151,7 +151,7 @@ const fetchScripts = async () => {
       keyword: searchKeyword.value, scriptType: filterType.value || undefined,
     })
     scripts.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取脚本列表失败') }
   finally { loading.value = false }
 }

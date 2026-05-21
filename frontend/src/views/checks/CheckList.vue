@@ -179,7 +179,7 @@ const fetchTasks = async () => {
       taskType: filterType.value || undefined, status: filterStatus.value || undefined,
     })
     tasks.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取任务列表失败') }
   finally { loading.value = false }
 }
@@ -192,7 +192,7 @@ const fetchReports = async () => {
       taskId: filterTask.value, status: filterReportStatus.value || undefined,
     })
     reports.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取报告列表失败') }
   finally { loading.value = false }
 }

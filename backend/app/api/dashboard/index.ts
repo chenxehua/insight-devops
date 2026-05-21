@@ -21,11 +21,11 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
     scriptStats,
     userStats
   ] = await Promise.all([
-    // 应用统计
+    // 应用统计 (apps表无status列，按总数统计)
     getOne(`
-      SELECT 
+      SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active
+        COUNT(*) as active
       FROM apps
     `),
     // 部署统计
@@ -93,7 +93,7 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
   
   // 获取最近告警
   const recentAlerts = getAll(`
-    SELECT id, alert_name, level, status, metric_name, metric_value, 
+    SELECT id, alert_name, alert_level, status, metric_name, metric_value, 
            created_at
     FROM alerts
     ORDER BY created_at DESC
@@ -102,7 +102,7 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
   
   // 获取活跃故障
   const activeFaults = getAll(`
-    SELECT id, fault_title, level, status, created_at
+    SELECT id, fault_title, fault_level, status, created_at
     FROM faults
     WHERE status IN ('open', 'handling')
     ORDER BY created_at DESC
@@ -161,7 +161,7 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
       recentAlerts: recentAlerts.map(a => ({
         id: a.id,
         alertName: a.alert_name,
-        level: a.level,
+        alertLevel: a.alert_level,
         status: a.status,
         metricName: a.metric_name,
         metricValue: a.metric_value,
@@ -169,8 +169,8 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
       })),
       activeFaults: activeFaults.map(f => ({
         id: f.id,
-        title: f.fault_title,
-        level: f.level,
+        faultTitle: f.fault_title,
+        faultLevel: f.fault_level,
         status: f.status,
         createdAt: f.created_at,
       })),
@@ -197,11 +197,11 @@ router.get('/trend', asyncHandler(async (req: Request, res: Response) => {
   
   // 获取过去N天的告警趋势
   const alertTrend = getAll(`
-    SELECT 
+    SELECT
       DATE(created_at) as date,
       COUNT(*) as total,
-      SUM(CASE WHEN level = 'critical' THEN 1 ELSE 0 END) as critical,
-      SUM(CASE WHEN level = 'warning' THEN 1 ELSE 0 END) as warning
+      SUM(CASE WHEN alert_level = 'critical' THEN 1 ELSE 0 END) as critical,
+      SUM(CASE WHEN alert_level = 'warning' THEN 1 ELSE 0 END) as warning
     FROM alerts
     WHERE created_at >= datetime('now', '-${days} days')
     GROUP BY DATE(created_at)

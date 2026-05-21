@@ -155,7 +155,7 @@ const fetchMonitors = async () => {
       keyword: searchKeyword.value, targetType: filterTarget.value || undefined, status: filterStatus.value,
     })
     monitors.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取监控列表失败') }
   finally { loading.value = false }
 }

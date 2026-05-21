@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2026-05-21T00:16:48.485738",
+    "category": "project_info",
+    "content": "## 天鹂可视化运维平台 - 项目规划总结\n\n### 技术栈\n- **前端**: Vue 3 + Vite + Pinia + Vue Router + Ant Design Vue 4 + TypeScript\n- **后端**: Express + Prisma ORM + SQLite + TypeScript + JWT\n- **测试**: Vitest + Playwright + MSW\n\n### 核心功能模块 (10个)\n1. 用户认证与权限 (User, Role, Permission)\n2. 应用管理 (App)\n3. 部署管理 (DeployTask)\n4. 脚本管理 (Script, ScriptExecution)\n5. 配置管理 (Config)\n6. 监控告警 (Monitor, Alert, AlertRule)\n7. 日志分析 (LogEntry)\n8. 故障管理 (Fault)\n9. 镜像管理 (Image, ImageRepo)\n10. 备份管理 (Backup, Database)\n11. 巡检管理 (CheckTask, CheckReport)\n\n### 数据库表 (21个)\nusers, roles, permissions, user_roles, role_permissions, apps, deploy_tasks, scripts, script_executions, configs, config_versions, monitors, alerts, logs, faults, images, backups, check_tasks, check_reports, audit_logs, notifications\n\n### 测试要求\n- 单元测试 (≥80%覆盖率)\n- 接口测试 (API Tests)\n- UI测试 (≥90%覆盖率)\n- E2E测试 (End-to-End Tests)\n\n### 12周开发计划\n- 第1周: 项目初始化、数据库、认证\n- 第2-3周: 核心业务API\n- 第4周: 高级业务API\n- 第5-8周: 前端开发\n- 第9周: 前后端联调\n- 第10周: UI和E2E测试\n- 第11周: 性能和安全测试\n- 第12周: 部署准备"
+  },
+  {
+    "timestamp": "2026-05-21T01:18:13.188246",
+    "category": "project_status",
+    "content": "Backend: ✅ All 13 API endpoints working (auth, users, roles, apps, deploys, scripts, configs, monitors, logs, faults, images, backups, checks). Frontend: ✅ Vite dev server running on port 5173 with proxy to backend. Tests: ⚠️ Mock configuration needs update for sql.js (currently failing due to `db.prepare` mock). AlertList.vue: ✅ Created missing component."
+  },
+  {
+    "timestamp": "2026-05-21T03:03:03.502454",
+    "category": "project_status",
+    "content": "Insight DevOps Platform - Testing Status Summary (Round 11)\n\n## Current Test Infrastructure\n\n### Backend Tests (backend/tests/)\n- **Unit Tests**: tests/unit/\n  - auth.test.ts - Authentication utilities tests\n  - common.test.ts - Common utilities tests (removeEmpty, pagination, etc.)\n  - user.service.test.ts - User database service tests\n\n- **Integration Tests**: tests/integration/\n  - api.test.ts - API endpoint tests (auth, users, apps, deploys, scripts, configs, monitors, logs, faults, images, backups, checks)\n\n- **E2E Tests**: tests/e2e/\n  - app.spec.ts - Full application E2E tests\n\n- **Mocks**: tests/mocks/\n  - handlers.ts - MSW API mock handlers\n  - server.ts - Mock server setup\n\n### Frontend Tests (frontend/tests/)\n- **Unit Tests**: tests/unit/\n  - stores.spec.ts - Pinia store tests (auth, user, app, deploy, script)\n  - utils/ - Utility function tests\n  - components/ - Component tests\n\n- **Integration Tests**: tests/integration/\n  - login.spec.ts - Login integration tests\n\n- **E2E Tests**: tests/e2e/\n  - auth.spec.ts - Authentication E2E tests\n  - app.spec.ts - Application E2E tests\n\n## Testing Configuration Files\n- backend/vitest.config.ts - Backend test configuration\n- backend/playwright.config.ts - Backend E2E configuration\n- frontend/vitest.config.ts - Frontend test configuration (jsdom environment)\n- frontend/playwright.config.ts - Frontend E2E configuration (multi-browser: chromium, firefox, webkit, mobile)\n\n## Root E2E Configuration\n- e2e/playwright.config.ts - Root-level E2E configuration\n- e2e/page-objects/ - Page object models\n- e2e/tests/ - E2E test cases\n\n## Next Steps Required\n1. Fix any failing tests and ensure all pass\n2. Run backend and frontend unit/integration tests\n3. Execute E2E tests with Playwright\n4. Verify coverage reports\n5. Document test execution results"
+  },
+  {
+    "timestamp": "2026-05-21T03:26:46.220743",
+    "category": "project_info",
+    "content": "项目名称: 天鹂可视化运维平台 (Insight DevOps) v1.0 - 开发进度评估\n关键发现:\n1. 数据库设计: 27张表全部完成 ✅\n2. 部署管理: 基础CRUD完成，回滚/取消/日志API缺失 ⚠️\n3. 脚本管理: 基础CRUD完成，执行/执行结果API缺失 ⚠️  \n4. 配置管理: 基础CRUD完成，回滚/对比API缺失 ⚠️\n5. 备份管理: 基础功能完成，恢复API缺失 ⚠️\n6. 巡检管理: 任务和报告页面部分完成，缺少定时执行/历史对比 ⚠️\n7. 前端页面: 大部分页面完成，数据库管理页面缺失\n8. 测试: E2E框架搭建，测试用例部分完成\n9. 仪表盘API: 待实现"
+  },
+  {
+    "timestamp": "2026-05-21T06:06:58.700755",
+    "category": "project_info",
+    "content": "项目待办任务清单整理：1)部署管理API补全(cancel/rollback/logs) 2)脚本管理API补全(execute/executions/:id) 3)配置管理API补全(rollback/diff) 4)备份管理API补全(restore) 5)仪表盘API 6)数据库管理页面 7)测试覆盖率提升到95%+"
+  },
+  {
+    "timestamp": "2026-05-21T06:38:41.881565",
+    "category": "project_info",
+    "content": "Backend coverage: 28.78%, Frontend coverage: 75.6%. Target: >95%. Need to add comprehensive tests for all API routes, services, and middleware."
+  },
+  {
+    "timestamp": "2026-05-21T06:44:29.936319",
+    "category": "project_info",
+    "content": "Project: 天鹂可视化运维平台 (Insight DevOps), Vue 3 + Express/TypeScript, Currently at 55-60% completion. Need to: 1) Complete missing APIs (deploy cancel/rollback/logs, script execute/executions, config rollback/diff, backup restore, dashboard stats), 2) Add DatabaseList.vue page, 3) Create comprehensive tests with >95% coverage."
+  },
+  {
+    "timestamp": "2026-05-21T07:08:31.851366",
+    "category": "project_info",
+    "content": "Project Status Summary:\n- All P0 missing APIs are implemented (deploy cancel/rollback/logs, script execute/executions, config rollback/diff, backup restore)\n- Backend tests: 467 passing, 28.78% coverage (target >95%)\n- Frontend tests: 296 passing, 80.11% coverage (target >95%)\n- Task: Create comprehensive tests to reach >95% coverage\n\nKey findings:\n1. deploys API at 16.16%, scripts API at 15.81%, backups API at 14.64%, configs API at 15.15%\n2. Services at ~10% coverage, middleware at ~49%\n3. Frontend stores need more tests for check.ts, log.ts"
+  },
+  {
+    "timestamp": "2026-05-21T09:16:55.105640",
+    "category": "project_info",
+    "content": "P0高优先级任务清单：\n1. 蓝绿部署策略 - 新增blue_green_deployments表 + API\n2. 金丝雀发布策略 - 新增canary_deployments表 + API  \n3. 批量部署功能 - 新增batch_deployments表 + API\n4. 健康检查功能 - 新增health_checks表 + API\n5. 定时/周期执行 - 新增script_schedules表 + API\n6. 执行结果通知 - 新增script_notifications表 + API"
+  },
+  {
+    "timestamp": "2026-05-21T10:42:27.017516",
+    "category": "project_info",
+    "content": "Insight DevOps项目测试进展记录:\n1. 后端API服务器运行在端口3000\n2. 前端Vite服务器运行在端口5173\n3. 已测试并发现的问题:\n   - /api/checks 404 (需要路由修正)\n   - /api/dashboard 404 (需要路由修正)\n   - /api/health 404 (需要路由修正)\n   - 批量部署和蓝绿部署需要部署任务ID才能测试"
+  }
+]

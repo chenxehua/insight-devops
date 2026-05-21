@@ -191,7 +191,7 @@ const fetchApps = async () => {
       appType: filterType.value || undefined,
     })
     apps.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) {
     message.error('获取应用列表失败')
   } finally {

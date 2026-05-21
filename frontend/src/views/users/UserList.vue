@@ -128,19 +128,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import { userApi, roleApi } from '@/services/api'
 import { message } from 'ant-design-vue'
 
-const users = ref([])
-const roles = ref([])
+interface User {
+  id: number
+  username: string
+  email: string
+  phone: string | null
+  realName: string | null
+  status: number
+  createdAt: string
+}
+
+interface Role {
+  id: number
+  roleName: string
+  roleCode: string
+}
+
+const users = ref<User[]>([])
+const roles = ref<Role[]>([])
 const loading = ref(false)
 const searchKeyword = ref('')
 const filterStatus = ref<number | null>(null)
 const showCreateModal = ref(false)
 const showPasswordModal = ref(false)
-const editingUser = ref(null)
+const editingUser = ref<User | null>(null)
 const formRef = ref()
 const passwordUserId = ref<number | null>(null)
 
@@ -187,7 +203,7 @@ const fetchUsers = async () => {
       status: filterStatus.value ?? undefined,
     })
     users.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) {
     message.error('获取用户列表失败')
   } finally {

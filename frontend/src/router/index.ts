@@ -95,6 +95,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '备份管理', icon: 'DatabaseOutlined', permission: 'backup:manage' },
       },
       {
+        path: 'databases',
+        name: 'Databases',
+        component: () => import('@/views/backups/DatabaseList.vue'),
+        meta: { title: '数据库管理', icon: 'TableOutlined', permission: 'backup:manage' },
+      },
+      {
         path: 'checks',
         name: 'Checks',
         component: () => import('@/views/checks/CheckList.vue'),

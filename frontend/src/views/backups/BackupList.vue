@@ -149,7 +149,7 @@ const fetchDatabases = async () => {
   try {
     const res = await backupApi.listDatabases({ page: pagination.current, pageSize: pagination.pageSize })
     databases.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取数据库列表失败') }
   finally { loading.value = false }
 }
@@ -162,7 +162,7 @@ const fetchBackups = async () => {
       databaseId: filterDb.value, backupType: filterType.value || undefined, status: filterStatus.value || undefined,
     })
     backups.value = res.data.list
-    pagination.total = res.data.pagination.total
+    pagination.total = res.data.total
   } catch (error) { message.error('获取备份列表失败') }
   finally { loading.value = false }
 }
